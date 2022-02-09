@@ -53,5 +53,6 @@
     "./define-sb-action-logger": "./sb-action-logger.js",
     "./define-sb-locale-switcher": "./sb-locale-switcher.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

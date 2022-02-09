@@ -53,5 +53,6 @@
     ".": "./index.js",
     "./define": "./lion-dialog.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

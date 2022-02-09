@@ -52,5 +52,6 @@
     ".": "./index.js",
     "./define": "./lion-select.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

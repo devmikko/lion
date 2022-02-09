@@ -51,5 +51,6 @@
     ".": "./index.js",
     "./define": "./lion-tabs.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

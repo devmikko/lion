@@ -53,5 +53,6 @@
     ".": "./index.js",
     "./define": "./lion-fieldset.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

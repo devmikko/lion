@@ -57,5 +57,6 @@
     "./define-radio": "./lion-radio.js",
     "./define-radio-group": "./lion-radio-group.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

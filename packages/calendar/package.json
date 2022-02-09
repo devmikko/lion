@@ -54,5 +54,6 @@
     "./translations/*": "./translations/*",
     "./test-helpers": "./test-helpers/index.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

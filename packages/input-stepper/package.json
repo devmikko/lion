@@ -54,5 +54,6 @@
     ".": "./index.js",
     "./define": "./lion-input-stepper.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

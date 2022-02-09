@@ -53,5 +53,6 @@
     ".": "./index.js",
     "./define": "./lion-icon.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

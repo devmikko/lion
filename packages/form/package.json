@@ -51,5 +51,6 @@
     ".": "./index.js",
     "./define": "./lion-form.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

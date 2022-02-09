@@ -53,5 +53,6 @@
     "./define": "./lion-pagination.js",
     "./translations/*": "./translations/*",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

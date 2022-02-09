@@ -1,23 +1,31 @@
 import {
   expect,
   fixture as _fixture,
+  fixtureSync as _fixtureSync,
   html,
   defineCE,
   unsafeStatic,
   aTimeout,
 } from '@open-wc/testing';
+import sinon from 'sinon';
 import { localize } from '@lion/localize';
+import { mimicUserInput } from '@lion/form-core/test-helpers/mimicUserInput.js';
 import { LionInputTel } from '../src/LionInputTel.js';
 import { IsPhoneNumber } from '../src/validators.js';
-import { LibPhoneNumber } from '../src/LibPhoneNumber.js';
-import { mockLibPhoneNumber, restoreLibPhoneNumber } from '../test-helpers/mockLibPhoneNumber.js';
+import { LibPhoneNumberManager } from '../src/LibPhoneNumberManager.js';
+import {
+  mockLibPhoneNumberManager,
+  restoreLibPhoneNumberManager,
+} from '../test-helpers/mockLibPhoneNumberManager.js';
 
 /**
  * @typedef {import('@lion/core').TemplateResult} TemplateResult
  */
-const fixture = /** @type {(arg: string | TemplateResult) => Promise<LionInputTel>} */ (_fixture);
 
-const getCountryCodeBasedOnLocale = () =>
+const fixture = /** @type {(arg: string | TemplateResult) => Promise<LionInputTel>} */ (_fixture);
+const fixtureSync = /** @type {(arg: string | TemplateResult) => LionInputTel} */ (_fixtureSync);
+
+const getRegionCodeBasedOnLocale = () =>
   // @ts-expect-error [allow-protected]
   localize._getLangFromLocale(localize.locale).toUpperCase();
 
@@ -32,40 +40,54 @@ export function runInputTelSuite({ klass = LionInputTel } = {}) {
 
   describe('LionInputTel', () => {
     beforeEach(async () => {
-      // Wait till LibPhoneNumber has been loaded
-      await LibPhoneNumber.loadComplete;
+      // Wait till LibPhoneNumberManager has been loaded
+      await LibPhoneNumberManager.loadComplete;
     });
 
-    describe('Country code', () => {
+    describe('Region code', () => {
       it('automatically localizes based on current locale', async () => {
         const el = await fixture(html` <${tag}></${tag}> `);
-        const currentCode = getCountryCodeBasedOnLocale();
-        expect(el.countryCode).to.equal(currentCode);
+        const currentCode = getRegionCodeBasedOnLocale();
+        expect(el.regionCode).to.equal(currentCode);
       });
 
-      it('can preconfigure the country code via attr', async () => {
-        const currentCode = getCountryCodeBasedOnLocale();
+      it('deducts from modelValue when region code not provided', async () => {
+        const el = await fixture(html` <${tag} .modelValue="${'+31612345678'}"></${tag}> `);
+        // Region code for country code '31' is 'NL'
+        expect(el.regionCode).to.equal('NL');
+      });
+
+      it('can preconfigure the region code via attr', async () => {
+        const currentCode = getRegionCodeBasedOnLocale();
         const newCode = currentCode === 'DE' ? 'NL' : 'DE';
-        const el = await fixture(html` <${tag} country-code="${newCode}"></${tag}> `);
-        expect(el.countryCode).to.equal(newCode);
+        const el = await fixture(html` <${tag} region-code="${newCode}"></${tag}> `);
+        expect(el.regionCode).to.equal(newCode);
       });
 
-      it('can preconfigure the country code via prop', async () => {
-        const currentCode = getCountryCodeBasedOnLocale();
+      it('can preconfigure the region code via prop', async () => {
+        const currentCode = getRegionCodeBasedOnLocale();
         const newCode = currentCode === 'DE' ? 'NL' : 'DE';
-        const el = await fixture(html` <${tag} .countryCode="${newCode}"></${tag}> `);
-        expect(el.countryCode).to.equal(newCode);
+        const el = await fixture(html` <${tag} .regionCode="${newCode}"></${tag}> `);
+        expect(el.regionCode).to.equal(newCode);
       });
 
-      it('reformats when country code is changed on the fly', async () => {
+      it('reformats when region code is changed on the fly', async () => {
         const el = await fixture(
-          html` <${tag} .countryCode="${'NL'}" .modelValue="${'612345678'}" ></${tag}> `,
+          html` <${tag} .regionCode="${'NL'}" .modelValue="${'+31612345678'}" ></${tag}> `,
         );
         await el.updateComplete;
         expect(el.formattedValue).to.equal('06 12345678');
-        el.countryCode = 'EN';
+        el.regionCode = 'EN';
         await el.updateComplete;
         expect(el.formattedValue).to.equal('612345678');
+      });
+
+      it('region code takes precedence over modelValue when both contain country info', async () => {
+        const el = await fixture(
+          html` <${tag} .regionCode="${'DE'}" .modelValue="${'+31612345678'}" ></${tag}> `,
+        );
+        await el.updateComplete;
+        expect(el.regionCode).to.equal('NL');
       });
     });
 
@@ -78,8 +100,35 @@ export function runInputTelSuite({ klass = LionInputTel } = {}) {
 
       it('formats according to locale', async () => {
         const el = await fixture(
-          html` <${tag} .modelValue="${'612345678'}" country-code="NL"></${tag}> `,
+          html` <${tag} .modelValue="${'+31612345678'}" region-code="NL"></${tag}> `,
         );
+        await aTimeout(0);
+        expect(el.formattedValue).to.equal('06 12345678');
+      });
+    });
+
+    // https://www.npmjs.com/package/google-libphonenumber
+    // https://en.wikipedia.org/wiki/E.164
+    describe('Values', () => {
+      it('stores a modelValue in E164 format', async () => {
+        const el = await fixture(html` <${tag} region-code="NL"></${tag}> `);
+        mimicUserInput(el, '612345678');
+        await aTimeout(0);
+        expect(el.modelValue).to.equal('+31612345678');
+      });
+
+      it('stores a serializedValue in E164 format', async () => {
+        const el = await fixture(html` <${tag} region-code="NL"></${tag}> `);
+        mimicUserInput(el, '612345678');
+        await aTimeout(0);
+        expect(el.serializedValue).to.equal('+31612345678');
+      });
+
+      it('stores a formattedValue in "format-strategy" format (phoneUtil.formatInOriginalFormat)', async () => {
+        const el = await fixture(
+          html` <${tag} format-strategy="original" region-code="NL"></${tag}> `,
+        );
+        mimicUserInput(el, '612345678');
         await aTimeout(0);
         expect(el.formattedValue).to.equal('06 12345678');
       });
@@ -90,6 +139,33 @@ export function runInputTelSuite({ klass = LionInputTel } = {}) {
         const el = await fixture(html` <${tag}></${tag}> `);
         expect(el.defaultValidators.find(v => v instanceof IsPhoneNumber)).to.be.not.undefined;
       });
+
+      it('configures IsPhoneNumber with regionCode before first validation', async () => {
+        const el = fixtureSync(
+          html` <${tag} .regionCode="${'NL'}" .modelValue="${'612345678'}"></${tag}> `,
+        );
+        const spy = sinon.spy(el, 'validate');
+        const validatorInstance = /** @type {IsPhoneNumber} */ (
+          el.defaultValidators.find(v => v instanceof IsPhoneNumber)
+        );
+        expect(validatorInstance.param).to.equal('NL');
+        expect(spy).to.not.have.been.called;
+        await el.updateComplete;
+        expect(spy).to.have.been.called;
+        spy.restore();
+      });
+
+      it('updates IsPhoneNumber param on regionCode change', async () => {
+        const el = await fixture(
+          html` <${tag} .regionCode="${'NL'}" .modelValue="${'612345678'}"></${tag}> `,
+        );
+        const validatorInstance = /** @type {IsPhoneNumber} */ (
+          el.defaultValidators.find(v => v instanceof IsPhoneNumber)
+        );
+        el.regionCode = 'DE';
+        await el.updateComplete;
+        expect(validatorInstance.param).to.equal('DE');
+      });
     });
 
     describe('User interaction', () => {
@@ -100,8 +176,8 @@ export function runInputTelSuite({ klass = LionInputTel } = {}) {
       });
 
       it('formats according to locale', async () => {
-        const el = await fixture(html` <${tag} country-code="NL"></${tag}> `);
-        await LibPhoneNumber.loadComplete;
+        const el = await fixture(html` <${tag} region-code="NL"></${tag}> `);
+        await LibPhoneNumberManager.loadComplete;
         el.modelValue = '612345678';
         expect(el.formattedValue).to.equal('06 12345678');
       });
@@ -110,22 +186,20 @@ export function runInputTelSuite({ klass = LionInputTel } = {}) {
     describe('Accessibility', () => {
       describe('Audit', () => {
         it('passes a11y audit', async () => {
-          const el = await fixture(
-            html`<${tag} label="tel" .modelValue=${'NL20INGB0001234567'}></${tag}>`,
-          );
+          const el = await fixture(html`<${tag} label="tel" .modelValue=${'0123456789'}></${tag}>`);
           await expect(el).to.be.accessible();
         });
 
         it('passes a11y audit when readonly', async () => {
           const el = await fixture(
-            html`<${tag} label="tel" readonly .modelValue=${'NL20INGB0001234567'}></${tag}>`,
+            html`<${tag} label="tel" readonly .modelValue=${'0123456789'}></${tag}>`,
           );
           await expect(el).to.be.accessible();
         });
 
         it('passes a11y audit when disabled', async () => {
           const el = await fixture(
-            html`<${tag} label="tel" disabled .modelValue=${'NL20INGB0001234567'}></${tag}>`,
+            html`<${tag} label="tel" disabled .modelValue=${'0123456789'}></${tag}>`,
           );
           await expect(el).to.be.accessible();
         });
@@ -136,16 +210,16 @@ export function runInputTelSuite({ klass = LionInputTel } = {}) {
       /** @type {(value:any) => void} */
       let resolveLoaded;
       beforeEach(() => {
-        ({ resolveLoaded } = mockLibPhoneNumber());
+        ({ resolveLoaded } = mockLibPhoneNumberManager());
       });
 
       afterEach(() => {
-        restoreLibPhoneNumber();
+        restoreLibPhoneNumberManager();
       });
 
       it('reformats once lib has been loaded', async () => {
         const el = await fixture(
-          html` <${tag} .modelValue="${'612345678'}" country-code="NL"></${tag}> `,
+          html` <${tag} .modelValue="${'612345678'}" region-code="NL"></${tag}> `,
         );
         expect(el.formattedValue).to.equal('612345678');
         resolveLoaded(undefined);

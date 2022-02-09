@@ -1,0 +1,64 @@
+{
+  "name": "@lion/input-phone",
+  "version": "0.0.0",
+  "description": "Input field for entering phone numbers, including validation, formatting and mobile keyboard support.",
+  "license": "MIT",
+  "author": "ing-bank",
+  "homepage": "https://github.com/ing-bank/lion/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ing-bank/lion.git",
+    "directory": "packages/input-phone"
+  },
+  "main": "index.js",
+  "module": "index.js",
+  "files": [
+    "*.d.ts",
+    "*.js",
+    "custom-elements.json",
+    "docs",
+    "src",
+    "test",
+    "test-helpers",
+    "translations",
+    "types"
+  ],
+  "scripts": {
+    "custom-elements-manifest": "custom-elements-manifest analyze --litelement --exclude \"docs/**/*\" \"test-helpers/**/*\"",
+    "debug": "cd ../../ && npm run debug -- --group input-phone",
+    "debug:firefox": "cd ../../ && npm run debug:firefox -- --group input-phone",
+    "debug:webkit": "cd ../../ && npm run debug:webkit -- --group input-phone",
+    "publish-docs": "node ../../packages-node/publish-docs/src/cli.js --github-url https://github.com/ing-bank/lion/ --git-root-dir ../../",
+    "prepublishOnly": "npm run publish-docs && npm run custom-elements-manifest",
+    "test": "cd ../../ && npm run test:browser -- --group input-phone"
+  },
+  "sideEffects": [
+    "lion-input-phone.js"
+  ],
+  "dependencies": {
+    "@lion/core": "0.20.0",
+    "@lion/form-core": "0.15.5",
+    "@lion/input": "0.15.8",
+    "@lion/localize": "0.22.0",
+    "google-libphonenumber": "^3.2.26"
+  },
+  "devDependencies": {
+    "@types/google-libphonenumber": "^7.4.23"
+  },
+  "keywords": [
+    "input",
+    "input-phone",
+    "lion",
+    "web-components"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "customElements": "custom-elements.json",
+  "customElementsManifest": "custom-elements.json",
+  "exports": {
+    ".": "./index.js",
+    "./define": "./lion-input-phone.js",
+    "./docs/*": "./docs/*"
+  }
+}

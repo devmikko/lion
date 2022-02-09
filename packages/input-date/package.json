@@ -55,5 +55,6 @@
     ".": "./index.js",
     "./define": "./lion-input-date.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

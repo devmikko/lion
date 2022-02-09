@@ -51,5 +51,6 @@
     ".": "./index.js",
     "./define": "./lion-accordion.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

@@ -52,5 +52,6 @@
     "./define": "./lion-input.js",
     "./docs/*": "./docs/*",
     "./test-helpers": "./test-helpers/index.js"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

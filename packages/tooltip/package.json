@@ -52,5 +52,6 @@
     ".": "./index.js",
     "./define": "./lion-tooltip.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

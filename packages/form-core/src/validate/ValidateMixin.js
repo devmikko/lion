@@ -511,7 +511,6 @@ export const ValidateMixinImplementation = superclass =>
       const resultOutCome = this.__executeResultValidators(syncAndAsyncOutcome);
 
       this.__validationResult = [...resultOutCome, ...syncAndAsyncOutcome];
-      // this._storeResultsOnInstance(this.__validationResult);
 
       const ctor =
         /** @type {typeof import('../../types/validate/ValidateMixinTypes').ValidateHost} */ (
@@ -731,12 +730,12 @@ export const ValidateMixinImplementation = superclass =>
     }
 
     /**
-     * Allows the end user to specify when a feedback message should be shown
+     * Allows the Application Developer to specify when a feedback message should be shown
      * @example
      * ```js
      * feedbackCondition(type, meta, defaultCondition) {
      *   if (type === 'info') {
-     *     return return;
+     *     return true;
      *   } else if (type === 'prefilledOnly') {
      *     return meta.prefilled;
      *   }
@@ -774,7 +773,9 @@ export const ValidateMixinImplementation = superclass =>
       );
     }
 
-    /** @param {import('@lion/core').PropertyValues} changedProperties */
+    /**
+     * @param {import('@lion/core').PropertyValues} changedProperties
+     */
     updated(changedProperties) {
       super.updated(changedProperties);
 
@@ -847,8 +848,8 @@ export const ValidateMixinImplementation = superclass =>
     }
 
     /**
-     * Orders all active validators in this.__validationResult. Can
-     * also filter out occurrences (based on interaction states)
+     * Orders all active validators in this.__validationResult.
+     * Can also filter out occurrences (based on interaction states)
      * @overridable
      * @param {{ validationResult: Validator[] }} opts
      * @return {Validator[]} ordered list of Validators with feedback messages visible to the end user

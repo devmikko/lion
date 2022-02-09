@@ -55,5 +55,6 @@
     "./define": "./lion-progress-indicator.js",
     "./translations/*": "./translations/*",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

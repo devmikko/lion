@@ -57,5 +57,6 @@
     "./define-button-submit": "./lion-button-submit.js",
     "./define": "./define.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

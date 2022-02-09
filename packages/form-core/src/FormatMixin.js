@@ -217,13 +217,12 @@ const FormatMixinImplementation = superclass =>
       if (value === '') {
         // Ideally, modelValue should be undefined for empty strings.
         // For backwards compatibility we return an empty string:
-        // - it triggers validation for required validators (see ValidateMixin.validate())
         // - it can be expected by 3rd parties (for instance unit tests)
         // TODO(@tlouisse): In a breaking refactor of the Validation System, this behavior can be corrected.
         return '';
       }
 
-      // A.2) Handle edge cases We might have no view value yet, for instance because
+      // A.2) Handle edge cases. We might have no view value yet, for instance because
       // _inputNode.value was not available yet
       if (typeof value !== 'string') {
         // This means there is nothing to find inside the view that can be of

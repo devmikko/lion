@@ -57,5 +57,6 @@
     "./define": "./lion-input-iban.js",
     "./translations/*": "./translations/*",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

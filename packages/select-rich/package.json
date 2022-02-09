@@ -67,5 +67,6 @@
     "./define-select-invoker": "./lion-select-invoker.js",
     "./define-select-rich": "./lion-select-rich.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

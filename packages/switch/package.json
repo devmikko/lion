@@ -57,5 +57,6 @@
     "./define-switch": "./lion-switch.js",
     "./define-switch-button": "./lion-switch-button.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

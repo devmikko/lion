@@ -4,7 +4,7 @@ import { aTimeout, defineCE, expect, fixture, html, unsafeStatic } from '@open-w
 import sinon from 'sinon';
 import { Unparseable, Validator } from '../index.js';
 import { FormatMixin } from '../src/FormatMixin.js';
-import { getFormControlMembers } from '../test-helpers/getFormControlMembers.js';
+import { getFormControlMembers, mimicUserInput } from '../test-helpers/index.js';
 
 /**
  * @typedef {import('../types/FormControlMixinTypes').FormControlHost} FormControlHost
@@ -32,22 +32,6 @@ class FormatClass extends FormatMixin(LitElement) {
     }
     return '';
   }
-}
-
-/**
- * @param {FormatClass} formControl
- * @param {?} newViewValue
- * @param {{caretIndex?:number}} config
- */
-function mimicUserInput(formControl, newViewValue, { caretIndex } = {}) {
-  formControl.value = newViewValue; // eslint-disable-line no-param-reassign
-  if (caretIndex) {
-    // eslint-disable-next-line no-param-reassign
-    formControl._inputNode.selectionStart = caretIndex;
-    // eslint-disable-next-line no-param-reassign
-    formControl._inputNode.selectionEnd = caretIndex;
-  }
-  formControl._inputNode.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 /**

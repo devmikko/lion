@@ -61,5 +61,6 @@
     "./define-option": "./lion-option.js",
     "./define-options": "./lion-options.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

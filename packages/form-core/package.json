@@ -58,5 +58,6 @@
     "./define-field": "./lion-field.js",
     "./define-validation-feedback": "./lion-validation-feedback.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }

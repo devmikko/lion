@@ -64,5 +64,6 @@
     ".": "./index.js",
     "./define": "./lion-combobox.js",
     "./docs/*": "./docs/*"
-  }
+  },
+  "customElementsManifest": "custom-elements.json"
 }
