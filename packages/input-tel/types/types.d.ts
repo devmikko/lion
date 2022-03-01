@@ -256,3 +256,29 @@ export type RegionCode =
   | 'ZA'
   | 'ZM'
   | 'ZW';
+
+type RefTemplateData = {
+  ref?: { value?: HTMLElement };
+  props?: { [key: string]: any };
+  listeners?: { [key: string]: any };
+  labels?: { [key: string]: any };
+};
+
+export type RegionMeta = {
+  countryCode: string;
+  regionCode: string;
+  nameForRegion: string;
+  nameForLocale: string;
+  flagSymbol: string;
+};
+
+export type TemplateDataForDropdownInputTel = {
+  refs: {
+    dropdown: RefTemplateData;
+  };
+  data: {
+    initialRegionCode: string;
+    regionMetaList: RegionMeta[];
+    regionMetaListPreferred: RegionMeta[];
+  };
+};

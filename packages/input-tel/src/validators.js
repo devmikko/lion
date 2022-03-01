@@ -15,14 +15,14 @@ function hasFeedback(modelValue, regionCode) {
   const PhoneNumber = /** @type {PhoneNumber} */ (LibPhoneNumberManager.PhoneNumber);
 
   if (regionCode && modelValue?.length >= 4 && modelValue?.length <= 16) {
-    let isValidForRegion = false;
+    let isInvalidForRegion = true;
     try {
       const pn = PhoneNumber(modelValue, regionCode);
-      isValidForRegion = pn.isValid();
+      isInvalidForRegion = !pn.isValid();
       // eslint-disable-next-line no-empty
     } catch (_) {}
     // return true if invalid
-    return !isValidForRegion;
+    return isInvalidForRegion;
   }
 
   return true;
@@ -34,7 +34,7 @@ export class IsPhoneNumber extends Validator {
   }
 
   static get async() {
-    // Will be run as async the first time, sync afterwards
+    // Will be run as async the first time if LibPhoneNumberManager hasn't loaded yet, sync afterwards
     return !LibPhoneNumberManager.isLoaded;
   }
 

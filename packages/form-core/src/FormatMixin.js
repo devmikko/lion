@@ -106,19 +106,23 @@ const FormatMixinImplementation = superclass =>
     }
 
     /**
-     * Preprocesses the viewValue before it's parsed to a modelValue. Can be used to filter
-     * invalid input amongst others.
+     * Preprocessors could be considered 'live formatters'. Their result is shown to the user
+     * on keyup instead of after blurring the field. The biggest difference between preprocessors
+     * and formatters is their moment of execution: preprocessors are run before modelValue is
+     * computed (and work based on view value), whereas formatters are run after the parser (and
+     * are based on modelValue)
      * @example
      * ```js
      * preprocessor(viewValue) {
      *   // only use digits
      *   return viewValue.replace(/\D/g, '');
      * }
-     * ```
      * @param {string} v - the raw value from the <input> after keyUp/Down event
-     * @returns {string} preprocessedValue: the result of preprocessing for invalid input
+     * @param {{ currentCaretIndex:number, prevViewValue: string }} opts
+     * @returns {string|{ viewValue:string, caretIndex:number }} the result of preprocessing for invalid input
      */
-    preprocessor(v) {
+    // eslint-disable-next-line no-unused-vars
+    preprocessor(v, opts) {
       return v;
     }
 
@@ -184,6 +188,10 @@ const FormatMixinImplementation = superclass =>
      */
     _calculateValues({ source } = { source: null }) {
       if (this.__preventRecursiveTrigger) return; // prevent infinite loops
+
+      if (this.tagName.toLowerCase() === 'intl-input-tel-dropdown') {
+        console.trace('_calculateValues', { source });
+      }
 
       /** @type {boolean} */
       this.__preventRecursiveTrigger = true;
@@ -318,7 +326,7 @@ const FormatMixinImplementation = superclass =>
      */
     _syncValueUpwards() {
       if (!this.__isHandlingComposition) {
-        this.value = this.preprocessor(this.value);
+        this.__handlePreprocessor();
       }
       const prevFormatted = this.formattedValue;
       this.modelValue = this._callParser(this.value);
@@ -330,6 +338,29 @@ const FormatMixinImplementation = superclass =>
       }
       /** @type {string} */
       this.__prevViewValue = this.value;
+    }
+
+    /**
+     * handle view value and caretIndex, depending on return type of .preprocessor
+     */
+    __handlePreprocessor() {
+      const unprocessedValue = this.value;
+      const preprocessedValue = this.preprocessor(this.value, {
+        currentCaretIndex: this._inputNode.selectionStart,
+        prevViewValue: this.__prevViewValue,
+      });
+      this.__prevViewValue = unprocessedValue;
+      if (typeof preprocessedValue === 'string') {
+        this.value = preprocessedValue;
+      } else if (typeof preprocessedValue === 'object') {
+        const { viewValue, caretIndex } = preprocessedValue;
+        this.value = viewValue;
+        if (caretIndex) {
+          // console.log({ caretIndex, viewValue }, this.value);
+          this._inputNode.selectionStart = caretIndex;
+          this._inputNode.selectionEnd = caretIndex;
+        }
+      }
     }
 
     /**
@@ -349,7 +380,7 @@ const FormatMixinImplementation = superclass =>
     /**
      * Every time .formattedValue is attempted to sync to the view value (on change/blur and on
      * modelValue change), this condition is checked. When enhancing it, it's recommended to
-     * call `super._reflectBackOn()`
+     * call via `return this._myExtraCondition && ssuper._reflectBackOn()`
      * @overridable
      * @return {boolean}
      * @protected

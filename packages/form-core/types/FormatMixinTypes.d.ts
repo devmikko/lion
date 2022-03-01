@@ -54,9 +54,13 @@ export declare class FormatHost {
    * }
    * ```
    * @param {string} v - the raw value from the <input> after keyUp/Down event
-   * @returns {string} preprocessedValue: the result of preprocessing for invalid input
+   * @param {{ prevViewValue: string; currentCaretIndex: number } | string} options - the raw value from the <input> after keyUp/Down event
+   * @returns {{ viewValue:string; caretIndex:number; }|string} preprocessedValue: the result of preprocessing for invalid input
    */
-  preprocessor(v: string): string;
+  preprocessor(
+    v: string,
+    options: { prevViewValue: string; currentCaretIndex: number },
+  ): { viewValue: string; caretIndex: number } | string;
 
   /**
    * The view value is the result of the formatter function (when available).

@@ -1,6 +1,7 @@
 import { localize } from '@lion/localize';
 import { LionInput } from '@lion/input';
 import { LibPhoneNumberManager } from './LibPhoneNumberManager.js';
+import { formatPhoneNumberAsYouType } from './preprocessors.js';
 import { formatPhoneNumber } from './formatters.js';
 import { parsePhoneNumber } from './parsers.js';
 import { IsPhoneNumber } from './validators.js';
@@ -12,13 +13,45 @@ import { IsPhoneNumber } from './validators.js';
  */
 
 export class LionInputTel extends LionInput {
-  static get properties() {
-    return {
-      regionCode: { type: String, attribute: 'region-code' },
-      formatStategy: { type: String, attribute: 'format-strategy' },
-    };
+  /**
+   * @configure LitElement
+   */
+  static properties = {
+    regionCode: { type: String, attribute: 'region-code' },
+    formatStategy: { type: String, attribute: 'format-strategy' },
+    autoFormat: { type: Boolean, attribute: 'auto-format' },
+    _phoneNumberUtil: { type: Object, state: true },
+    _needsLightDomRender: { type: Number, state: true },
+    _derivedRegionCode: { type: String, state: true },
+  };
+
+  /**
+   * @property regionCode
+   * @type {string}
+   */
+  get regionCode() {
+    return this.__regionCode || this._derivedRegionCode || this.__langIso;
   }
 
+  set regionCode(newValue) {
+    const oldValue = this.regionCode;
+    this.__regionCode = newValue;
+    this.requestUpdate('regionCode', oldValue);
+  }
+
+  /**
+   * @property _phoneNumberUtilLoadComplete
+   * @protected
+   * @type {Promise<PhoneNumber>}
+   */
+  // eslint-disable-next-line class-methods-use-this
+  get _phoneNumberUtilLoadComplete() {
+    return LibPhoneNumberManager.loadComplete;
+  }
+
+  /**
+   * @lifecycle platform
+   */
   constructor() {
     super();
 
@@ -33,23 +66,63 @@ export class LionInputTel extends LionInput {
     /**
      * Supported countries/regions as provided via
      * `libphonenumber.PhoneNumberUtil.getInstance().getSupportedRegions()`
+     * When not provided, will be derived from provided phone number text
      * @type {RegionCode|''}
      */
     this.regionCode = '';
 
-    this.__isPhoneNumberValidatorInstance = new IsPhoneNumber();
-    this.defaultValidators.push(this.__isPhoneNumberValidatorInstance);
+    // TODO: make this more generic: discriminate between 'live formatters'(meant for autoFormat),
+    // 'regular formatters' and 'regular preprocessors' (meant for filtering out certain chars)
+    /**
+     * Automatically formats code while typing. It smartly updates the
+     * caret position for best UX.
+     * @type {boolean}
+     */
+    this.autoFormat = false;
+
+    /**
+     * @protected
+     * @type {RegionCode|''}
+     * The region code that's derived from international phone numbers typed by the user
+     */
+    this._derivedRegionCode = '';
+
+    /** @private */
     // @ts-ignore [allow-protected] within our own code base
     this.__langIso = localize._getLangFromLocale(localize.locale).toUpperCase();
 
+    /** @private */
+    this.__isPhoneNumberValidatorInstance = new IsPhoneNumber();
+    /**  @configures ValidateMixin */
+    this.defaultValidators.push(this.__isPhoneNumberValidatorInstance);
+
+    // Expose awesome-phonenumber lib for Subclassers
+    /**
+     * @protected
+     * @type {PhoneNumber|null}
+     */
+    this._phoneNumberUtil = LibPhoneNumberManager.isLoaded
+      ? /** @type {PhoneNumber} */ (LibPhoneNumberManager.PhoneNumber)
+      : null;
+
+    /**
+     * Helper that triggers a light dom render aligned with update loop.
+     * TODO: combine with render fn of SlotMixin
+     * @protected
+     * @type {number}
+     */
+    this._needsLightDomRender = 0;
+
     if (!LibPhoneNumberManager.isLoaded) {
       LibPhoneNumberManager.loadComplete.then(() => {
-        // Format when libPhoneNumber is loaded
-        this._calculateValues({ source: null });
+        this._onPhoneNumberUtilReady();
       });
     }
   }
 
+  /**
+   * @lifecycle platform
+   */
   connectedCallback() {
     super.connectedCallback();
     // Make sure we provide the correct regionCode at the right moment:
@@ -57,25 +130,15 @@ export class LionInputTel extends LionInput {
     this.__isPhoneNumberValidatorInstance.param = this.regionCode;
   }
 
-  /** @type {string} */
-  get regionCode() {
-    return this.__regionCode || this.__derivedRegionCode || this.__langIso;
-  }
+  /**
+   * @param {import('lit-element').PropertyValues } changedProperties
+   */
+  willUpdate(changedProperties) {
+    super.willUpdate(changedProperties);
 
-  get __derivedRegionCode() {
-    if (!LibPhoneNumberManager.isLoaded) {
-      return '';
+    if (changedProperties.has('modelValue')) {
+      this.__calculateDerivedRegionCode();
     }
-    // eslint-disable-next-line prefer-destructuring
-    const PhoneNumber = /** @type {PhoneNumber} */ (LibPhoneNumberManager.PhoneNumber);
-    return PhoneNumber(this.modelValue).getRegionCode();
-  }
-
-  /** @type {string} */
-  set regionCode(newValue) {
-    const oldValue = this.regionCode;
-    this.__regionCode = newValue;
-    this.requestUpdate('regionCode', oldValue);
   }
 
   /**
@@ -84,6 +147,7 @@ export class LionInputTel extends LionInput {
   firstUpdated(changedProperties) {
     super.firstUpdated(changedProperties);
 
+    // This will trigger the right keyboard on mobile
     this._inputNode.inputMode = 'tel';
   }
 
@@ -94,12 +158,17 @@ export class LionInputTel extends LionInput {
     super.updated(changedProperties);
 
     if (changedProperties.has('regionCode')) {
-      this._calculateValues({ source: null });
+      // Make sure new modelValue is computed, but prevent formattedValue from being set when focused
+      this.__isUpdatingRegionWhileFocused = this.focused;
+      this._calculateValues({ source: 'formatted' });
+      this.__isUpdatingRegionWhileFocused = false;
+
       this.__isPhoneNumberValidatorInstance.param = this.regionCode;
     }
   }
 
   /**
+   * @configure FormatMixin
    * @param {string} modelValue
    * @returns {string}
    */
@@ -111,6 +180,7 @@ export class LionInputTel extends LionInput {
   }
 
   /**
+   * @configure FormatMixin
    * @param {string} viewValue a phone number without (or with) country code, like '06 12345678'
    * @returns {string} a trimmed phone number with country code, like '+31612345678'
    */
@@ -118,5 +188,56 @@ export class LionInputTel extends LionInput {
     return parsePhoneNumber(viewValue, {
       regionCode: /** @type {RegionCode} */ (this.regionCode),
     });
+  }
+
+  /**
+   * @configure FormatMixin
+   * @param {string} viewValue
+   * @param {object} options
+   * @param {string} options.prevViewValue
+   * @param {number} options.currentCaretIndex
+   * @returns {{ viewValue:string; caretIndex:number;  }|string}
+   */
+  preprocessor(viewValue, { currentCaretIndex, prevViewValue }) {
+    if (!this.autoFormat) {
+      return viewValue;
+    }
+    // console.log('preprocessor', viewValue);
+    return formatPhoneNumberAsYouType(viewValue, {
+      regionCode: /** @type {RegionCode} */ (this.regionCode),
+      formatStrategy: this.formatStrategy,
+      currentCaretIndex,
+      prevViewValue,
+    });
+  }
+
+  /**
+   * @protected
+   */
+  _onPhoneNumberUtilReady() {
+    // This should trigger a rerender in shadow dom
+    this._phoneNumberUtil = /** @type {PhoneNumber} */ (LibPhoneNumberManager.PhoneNumber);
+    // This should trigger a rerender in light dom
+    this._scheduleLightDomRender();
+    // Format when libPhoneNumber is loaded
+    this._calculateValues({ source: null });
+    this.__calculateDerivedRegionCode();
+  }
+
+  /**
+   * This allows to hook into the update hook
+   * @protected
+   */
+  _scheduleLightDomRender() {
+    this._needsLightDomRender += 1;
+  }
+
+  /**
+   * @private
+   */
+  __calculateDerivedRegionCode() {
+    this._derivedRegionCode = this._phoneNumberUtil
+      ? this._phoneNumberUtil(this.value).getRegionCode()
+      : '';
   }
 }

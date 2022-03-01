@@ -17,11 +17,13 @@ export const main = () => {
 
 - Extends our [input](../input/overview.md)
 - Shows a mobile telephone keypad on mobile (by having a native `<input inputmode="tel">` inside)
-- Can be configured with a country code
-- Will be preconfigured with country derived from locale
-- Uses google-libphonenumber
-  - Formats phone numbers, based on country code
-  - Validates phone numbers, based on country code
+- Can be configured with a region code
+- Will be preconfigured with region derived from locale
+- Has the [e164 standard format](https://en.wikipedia.org/wiki/E.164) as modelValue
+- Uses [awesome-phonenumber](https://www.npmjs.com/package/awesome-phonenumber) (a performant, concise version of [google-lib-phonenumber](https://www.npmjs.com/package/google-libphonenumber)):
+  - Formats phone numbers, based on region code
+  - Validates phone numbers, based on region code
+- Lazy loads awesome-phonenumber, so that the first paint of this component will be brought to your screen as quick as possible
 
 ## Installation
 

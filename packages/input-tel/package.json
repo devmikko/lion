@@ -59,7 +59,7 @@
   "customElementsManifest": "custom-elements.json",
   "exports": {
     ".": "./index.js",
-    "./define": "./lion-input-tel.js",
+    "./define": "./define.js",
     "./docs/*": "./docs/*"
   }
 }
